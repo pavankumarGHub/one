@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage('code') {
+            steps {
+                git 'https://github.com/pavankumarGHub/one.git'
+            }
+        }
+        stage('build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('dockerbuild') {
+            steps {
+                sh 'docker build -t $imagename .'
+            }
+        }
+        stage ('Registry') {
+            steps {
+                sh 'docker login -u $hubusername -p $hubpassword'
+                sh 'docker tag $imagename $hubusername/dj2.0:$tagname'
+                sh 'docker push $hubusername/dj2.0:$tagname'
+            }
+        }
+        stage ('deploy') {
+            steps {
+                sh 'docker run -itd --name $containername -p $port:8080 $imagename'
+            }
+        }
+    }
+}
